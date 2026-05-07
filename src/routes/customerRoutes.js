@@ -1,0 +1,2 @@
+// Customer routes
+module.exports = {};

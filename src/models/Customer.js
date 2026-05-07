@@ -1,0 +1,2 @@
+// Customer model
+module.exports = {};
