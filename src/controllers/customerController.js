@@ -1,4 +1,6 @@
 const Customer = require("../models/Customer");
+const { validateRequiredFields, hasUpdateData } = require("../utils/validators");
+const { handleError } = require("../utils/errorHandler");
 
 /**
  * Create a new customer
@@ -9,20 +11,14 @@ exports.createCustomer = async (req, res) => {
   try {
     const { name, email, phone, address } = req.body;
 
-    // Validation
-    if (!name || !email || !phone) {
+    const requiredFieldsError = validateRequiredFields(
+      req.body,
+      ["name", "email", "phone"]
+    );
+    if (requiredFieldsError) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required fields: name, email, phone",
-      });
-    }
-
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide a valid email address",
+        message: requiredFieldsError,
       });
     }
 
@@ -34,17 +30,10 @@ exports.createCustomer = async (req, res) => {
       data: customer,
     });
   } catch (error) {
-    // Handle MongoDB duplicate key error
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already exists",
-      });
-    }
-
-    res.status(500).json({
+    const { status, message } = handleError(error);
+    res.status(status).json({
       success: false,
-      message: error.message || "Internal server error",
+      message,
     });
   }
 };
@@ -64,9 +53,104 @@ exports.getCustomers = async (req, res) => {
       data: customers,
     });
   } catch (error) {
-    res.status(500).json({
+    const { status, message } = handleError(error);
+    res.status(status).json({
       success: false,
-      message: error.message || "Internal server error",
+      message,
+    });
+  }
+};
+
+/**
+ * Update a customer by ID
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+exports.updateCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID is required",
+      });
+    }
+
+    const updateData = {};
+    if (req.body.name) updateData.name = req.body.name;
+    if (req.body.email) updateData.email = req.body.email;
+    if (req.body.phone) updateData.phone = req.body.phone;
+    if (req.body.address !== undefined) updateData.address = req.body.address;
+
+    if (!hasUpdateData(updateData)) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one field is required to update",
+      });
+    }
+
+    const customer = await Customer.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Customer updated successfully",
+      data: customer,
+    });
+  } catch (error) {
+    const { status, message } = handleError(error);
+    res.status(status).json({
+      success: false,
+      message,
+    });
+  }
+};
+
+/**
+ * Delete a customer by ID
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+exports.deleteCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID is required",
+      });
+    }
+
+    const customer = await Customer.findByIdAndDelete(id);
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Customer deleted successfully",
+      data: customer,
+    });
+  } catch (error) {
+    const { status, message } = handleError(error);
+    res.status(status).json({
+      success: false,
+      message,
     });
   }
 };
