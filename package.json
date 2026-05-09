@@ -1,14 +1,14 @@
 {
   "name": "customer-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "RESTful API for managing customer data with MongoDB",
+  "main": "src/server.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SanilShah/fuzzy-sniffle.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["api", "customer", "express", "mongodb"],
+  "author": "Your Name",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
